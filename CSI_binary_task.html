@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title> "CSI" </title>
+  <script src = "jspsych_6_0_5/jspsych.js"></script>
+  <script src = "jspsych_6_0_5/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src = "jspsych_6_0_5/plugins/jspsych-image-keyboard-response.js"></script>
+  <script src = "jspsych_6_0_5/plugins/jspsych-html-button-response.js"></script>
+  <script src = "jspsych_6_0_5/plugins/jspsych-survey-text.js"></script>
+  <link href = "jspsych_6_0_5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+<style>
+div.image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+div.reminder_left {
+  position: absolute;
+  top: 80%;
+  left: 25%
+}
+
+div.reminder_right {
+  position: absolute;
+  top: 80%;
+  left: 75%
+}
+
+/*define the container for the consent form*/
+div.consent_form {
+  position: absolute;
+  top:50%;
+  left: 50%;
+  height: 600px;
+  width: 900px;
+  margin: -300px 0 0 -450px;
+}
+
+html {
+  background-color: #b5b5b5;
+}
+</style>
+
+</head>
+
+<body></body>
+
+<script>
+// show consent form
+// first empty timeline
+var timeline = [];
+
+var get_consent = {
+  type: "html-button-response",
+  stimulus: "<div style= 'height: 700px; width: 1000px'>Bitte lesen Sie sich die Einverständniserklärung aufmerksam durch!" +
+            "<div class= 'consent_form'><embed src = 'img/Einverstaendniserklaerung.pdf' type= 'application/pdf' height= '600px' width= '900px'></embed></div></div>",
+  choices: ["Ich möchte <b>nicht</b> an der Studie teilnehmen!", "Ich habe die Erklärung <b>verstanden</b> und möchte teilnehmen!"]
+};
+
+timeline.push(get_consent);
+
+//create a trial that only shows when participants refuse to give consent --- Note: evtl re-Do Option? sodass sie nochmal abbrechen müssen?
+//this trial is only what they see when aborting, not where we formulate condition..
+
+var text_abbruch = {
+   type: "html-button-response",
+   stimulus: "Sind Sie sich sicher? <br></br>Falls Sie gerade aus Versehen den falschen Knopf gedrückt haben, können Sie jetzt noch einmal entscheiden...<br></br>",
+   choices: ["Ich bin mir sicher - ich möchte <b>nicht</b> teilnehmen!", "Das war ein Versehen: ich möchte teilnehmen und willige in die Teilnahme ein!"]
+};
+//create a trial that shows when they have aborted twice..
+
+var text_abbruch_sicher = {
+  type: "html-keyboard-response",
+  stimulus: "Das Experiment ist hiermit vorzeitig beendet..<br></br>Sie können den Browser jetzt schließen...",
+  choices: jsPsych.NO_KEYS
+};
+
+
+//create a separate conditional procedure that only contains text_abbruch and that evaluates which button was pressed on "get_consent"
+var abbruch = {
+  timeline: [text_abbruch],
+  conditional_function: function(){
+    var data = jsPsych.data.getLastTrialData().values()[0];
+    if (data.button_pressed == 0){
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+timeline.push(abbruch);
+
+//zweiter check: also wieder eine procedure die diesmal den button_pressed bei text_abbruch prüft..
+var abbruch_sicher = {
+  timeline: [text_abbruch_sicher],
+  conditional_function: function(){
+  var data = jsPsych.data.getLastTrialData().values()[0];
+  if (data.button_pressed == 0){
+    return true;
+  } else {
+    return false;
+  }
+ }
+};
+
+timeline.push(abbruch_sicher);
+
+//create a trial (probably for demographics..) that follows next when consent is granted...
+var demographics = {
+  type: "survey-text",
+  questions: [
+    {prompt: "Geben Sie bitte Ihr Geschlecht an!", placeholder: "m/w/d", required: true},
+    {prompt: "Wie alt sind Sie?", placeholder: "Alter", required: true},
+    {prompt: "Sind Sie deutsche/-r Muttersprachler/-in?", placeholder: "ja/nein", required: true}
+    ],
+  preamble: "Zunächst benötigen wir einige demopraphische Angaben..<br></br>Bitte füllen Sie hierfür die Textfelder unten aus!",
+  button_label: "Zum Fortfahren hier klicken.."
+};
+
+timeline.push(demographics);
+
+//create a trial with instructions..
+
+var instructions_1 = {
+  type: "html-button-response",
+  stimulus: "<div>Im folgenden Experiment werden Sie eine Reihe von Bildern alltäglicher Dinge sehen.<br></br>Ihre Aufgabe ist es jeweils anzugeben,"+
+            " ob der <b> letzte Buchstabe<b> des Wortes für das Bild ein <b>Vokal</b> oder ein <b>Konsonant</b> ist." +
+            "<br></br><b>Endet</b> das Wort mit einem <b>Vokal</b>" +
+            " drücken Sie bitte die Taste <b>S</b> auf Ihrer Tastatur und <b>endet</b> das Wort mit einem <b>Konsonanten</b> drücken Sie bitte die Taste <b>L</b>!<br></br>" +
+            /*"<div style= 'float: left'><br></br>Taste <b>D</b><br></br>Vokal</div><div style= 'float:right'><br></br>Taste <b>K</b><br></br>Konsonant</div><br></br>*/"Auf der nächsten Seite folgen ein paar Beispiele!<br></br><br></br><br></br></div>",
+  choices: ["Klicken Sie hier um fortzufahren.."]
+};
+
+var instructions_2 = {
+  type: "html-keyboard-response",
+  stimulus: "<div>Im folgenden Experiment werden Sie eine Reihe von Bildern alltäglicher Dinge sehen.<br></br>Ihre Aufgabe ist es jeweils anzugeben,"+
+            " ob der <b> letzte Buchstabe<b> des Wortes für das Bild ein <b>Vokal</b> oder ein <b>Konsonant</b> ist." +
+            "<br></br><b>Endet</b> das Wort mit einem <b>Vokal</b>" +
+            " drücken Sie bitte die Taste <b>S</b> auf Ihrer Tastatur und <b>endet</b> das Wort mit einem <b>Konsonanten</b> drücken Sie bitte die Taste <b>L</b>!<br></br>" +
+            "<div style= 'float: left'><br></br>Taste <b>D</b><br></br>Vokal</div><div style= 'float:right'><br></br>Taste <b>K</b><br></br>Konsonant</div><br></br>Auf der nächsten Seite folgen ein paar Beispiele!<br></br><br></br><br></br></div>",
+  choices: ["Klicken Sie hier um fortzufahren.."]
+};
+
+timeline.push(instructions);
+
+//create a trial that only says "Starten des Trainings/Experiments mit beliebiger Taste"
+//maybe use a defined timeline instead of pushed timeline..?
+// the timeline would be: timeline = [get_consent, abbruch, abbruch_sicher, demographics, instructions, start_practice, practice_procedure, start_test, test_procedure]
+
+var start_practice = {
+  type: "html-keyboard-response",
+  stimulus: "Zum Starten des Trainings beliebige Taste drücken..."
+};
+
+var start_test = {
+  type: "html-keyboard-response",
+  stimulus: "Zum Starten des Experiments beliebige Taste drücken..."
+};
+
+
+
+
+// open question: fullscreen mode --> do i push it here, or does that then change everything to fullscreen??
+//regarding data: for practice at least, we need feedback on correctness...
+//preload images!!
+//re_run practice if accuracy too low?? -> would work through conditional timeline element between practice procedure and test_procedure, right?
+//ascci utf? declare or not?
+//There has to be an additional blank screen that can be skipped by keyboard before practice and test, so that participants dont have to switch from mouse to keyboard in a hurry!!
+//response coding: especially evtl Kongruenzprobleme mit K = Konsonant...?
+
+
+//now create the elements (fixation, test_trial) that I'll need in the practice/main procedure..
+var fixation = {
+  type: "html-keyboard-response",
+  stimulus: '<div style = "font-size: 60px">+</div>',
+  choices: jsPsych.NO_KEYS,
+  trial_duration: 500,
+  data: {test_part: "fixation"}
+  };
+
+//practice trial
+var practice_trial = {
+  type: "image-keyboard-response",
+  stimulus: jsPsych.timelineVariable("stimulus"),
+  choices: ["d", "k"],
+  trial_duration: 2000,
+  data: jsPsych.timelineVariable("data"),
+  on_finish: function(data){
+    if(data.key_press == data.target_response){
+      data.correct = true;
+    } else {
+      data.correct = false;
+    }
+  }
+};
+
+//test_trial
+var test_trial = {
+  type: "image-keyboard-response",
+  stimulus: jsPsych.timelineVariable("stimulus"),
+  choices: ["d", "k"],
+  trial_duration: 2000,
+  data: jsPsych.timelineVariable("data"),
+  on_finish: function(data){
+    if(data.key_press == data.target_response){
+      data.correct = true;
+    } else {
+      data.correct = false;
+    }
+  }
+};
+
+//time for the arrays: one for practice and one for test
+
+//practice
+var practice_stimuli = [
+  {stimulus: "img/aal.png", data: {test_part: "pract", category: 1, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/becher.png", data: {test_part: "pract", category: 2, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/boje.png", data: {test_part: "pract", category: 3, ordinal_position: 1, vow_con: "vow", target_response: 68}},
+  {stimulus: "img/buch.png", data: {test_part: "pract", category: 4, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/deo.png", data: {test_part: "pract", category: 5, ordinal_position: 1, vow_con: "vow", target_response: 68}}
+  ];
+
+//test
+var test_stimuli = [
+  {stimulus: "img/aal.png", data: {test_part: "test", category: 1, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/becher.png", data: {test_part: "test", category: 2, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/boje.png", data: {test_part: "test", category: 3, ordinal_position: 1, vow_con: "vow", target_response: 68}},
+  {stimulus: "img/buch.png", data: {test_part: "test", category: 4, ordinal_position: 1, vow_con: "con", target_response: 75}},
+  {stimulus: "img/deo.png", data: {test_part: "test", category: 5, ordinal_position: 1, vow_con: "vow", target_response: 68}}
+  ];
+
+
+
+//now the different sub-procedures: one for practice one for test/main
+
+//practice
+var practice_procedure = {
+  timeline: [fixation, practice_trial],
+  timeline_variables: practice_stimuli,
+  randomize_order: true
+};
+
+//test
+var test_procedure = {
+  timeline: [fixation, test_trial],
+  timeline_variables: test_stimuli
+  };
+
+//timeline.push(practice_procedure, test_procedure);
+
+// now also define an array with all images for preloading
+var bilder = ["img/aal.png", "img/becher.png", "img/boje.png", "img/buch.png", "img/deo.png"];
+
+
+jsPsych.init({
+  timeline: [get_consent, abbruch, abbruch_sicher, demographics, instructions_1, start_practice, practice_procedure, start_test, test_procedure],
+  on_finish: function() {
+        jsPsych.data.get().localSave('csv','trialrun.csv');
+    },
+  preload_images: bilder
+});
+
+
+</script>
+</html>
